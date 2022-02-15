@@ -40,14 +40,17 @@ function Sha512 () {
   this.pos = 0
   this.wasm = wasm
 
-  this._memory = new Uint8Array(wasm.memory.buffer)
-  this._memory.fill(0, this.pointer, this.pointer + STATEBYTES)
+  // IOS start with wasm.memory.buffer in 0 so we need to check that and realloc
+  if (wasm.memory.buffer.byteLength > 0) {
+    this._memory = new Uint8Array(wasm.memory.buffer)
+    this._memory.fill(0, this.pointer, this.pointer + STATEBYTES)
+  }
 
-  if (this.pointer + this.digestLength > this._memory.length) this._realloc(this.pointer + STATEBYTES)
+  if (this.pointer + this.digestLength > wasm.memory.buffer.byteLength) this._realloc(this.pointer + STATEBYTES)
 }
 
 Sha512.prototype._realloc = function (size) {
-  wasm.memory.grow(Math.max(0, Math.ceil(Math.abs(size - this._memory.length) / 65536)))
+  wasm.memory.grow(Math.max(0, Math.ceil(Math.abs(size - wasm.memory.buffer.byteLength) / 65536)))
   this._memory = new Uint8Array(wasm.memory.buffer)
 }
 
